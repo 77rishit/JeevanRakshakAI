@@ -5,6 +5,12 @@ from fastapi.middleware.cors import CORSMiddleware
 app = FastAPI()
 
 # CORS (IMPORTANT)
+@app.post("/analyze")
+def analyze(data: Input):
+    return {
+        "level": "🔥 WORKING NOW",
+        "advice": "BACKEND UPDATED SUCCESSFULLY"
+    }
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
