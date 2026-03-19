@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>🚑 JeevanRakshak AI</title>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+    }
+
+    .bg {
+      position: fixed;
+      width: 100%;
+      height: 100%;
+      background-size: cover;
+      animation: slideShow 20s infinite;
+      z-index: -2;
+    }
+
+    @keyframes slideShow {
+      0% {background-image: url('https://images.unsplash.com/photo-1579684385127-1ef15d508118');}
+      33% {background-image: url('https://images.unsplash.com/photo-1580281657527-47a1bba1c7c3');}
+      66% {background-image: url('https://images.unsplash.com/photo-1584515933487-779824d29309');}
+      100% {background-image: url('https://images.unsplash.com/photo-1588776814546-1ffcf47267a5');}
+    }
+
+    .overlay {
+      position: fixed;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.6);
+      z-index: -1;
+    }
+
+    .card {
+      background: rgba(255,255,255,0.15);
+      backdrop-filter: blur(15px);
+      padding: 30px;
+      border-radius: 20px;
+      width: 420px;
+      text-align: center;
+      color: white;
+    }
+
+    textarea {
+      width: 100%;
+      height: 100px;
+      border-radius: 12px;
+      border: none;
+      padding: 10px;
+    }
+
+    button {
+      margin-top: 10px;
+      padding: 12px;
+      width: 100%;
+      border: none;
+      border-radius: 12px;
+      background: #ff4b2b;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .result {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 12px;
+      display: none;
+      color: black;
+    }
+
+    .critical { background: #ffcccc; }
+    .moderate { background: #fff3cd; }
+    .safe { background: #d4edda; }
+
+    .call-btn { background: green; display: none; }
+  </style>
+</head>
+
+<body>
+
+<div class="bg"></div>
+<div class="overlay"></div>
+
+<div class="card">
+  <h1>🚑 JeevanRakshak AI</h1>
+
+  <textarea id="symptoms" placeholder="Describe symptoms..."></textarea>
+
+  <button onclick="analyze()">🔍 Analyze</button>
+  <button onclick="startVoice('en-IN')">🎤 Speak (English)</button>
+  <button onclick="startVoice('hi-IN')">🎤 Speak (Hindi)</button>
+
+  <div id="resultBox" class="result">
+    <h2 id="level"></h2>
+    <p id="advice"></p>
+  </div>
+
+  <button id="callBtn" class="call-btn" onclick="callAmbulance()">📞 Call 108</button>
+
+  <button onclick="findHospital()">🏥 Find Nearby Hospital</button>
+</div>
+
+<script>
+function startVoice(lang) {
+  const recognition = new webkitSpeechRecognition();
+  recognition.lang = lang;
+  recognition.start();
+
+  recognition.onresult = function(event) {
+    let speech = event.results[0][0].transcript;
+    document.getElementById("symptoms").value = speech;
+    analyze();
+  };
+}
+
+async function analyze() {
+  let symptoms = document.getElementById("symptoms").value;
+
+  let response = await fetch("http://127.0.0.1:8000/analyze", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({ symptoms })
+  });
+
+  let data = await response.json();
+
+  let box = document.getElementById("resultBox");
+  box.style.display = "block";
+  box.className = "result";
+
+  document.getElementById("level").innerText = data.level;
+  document.getElementById("advice").innerText = data.advice;
+
+  if (data.level.includes("Critical")) {
+    box.classList.add("critical");
+    document.getElementById("callBtn").style.display = "block";
+  } else if (data.level.includes("Moderate")) {
+    box.classList.add("moderate");
+  } else {
+    box.classList.add("safe");
+  }
+}
+
+function callAmbulance() {
+  window.location.href = "tel:108";
+}
+
+function findHospital() {
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(position => {
+      let lat = position.coords.latitude;
+      let lon = position.coords.longitude;
+
+      let url = `https://www.google.com/maps/search/hospitals/@${lat},${lon},15z`;
+      window.open(url, "_blank");
+    });
+  } else {
+    alert("Location not supported");
+  }
+}
+</script>
+
+</body>
+</html>
