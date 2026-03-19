@@ -1,171 +1,179 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>🚑 JeevanRakshak AI</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jeevan Rakshak AI</title>
 
-  <style>
-    body {
-      margin: 0;
-      font-family: 'Segoe UI', sans-serif;
-      height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      overflow: hidden;
-    }
+<style>
+body {
+  margin:0;
+  height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  font-family:Arial;
+  background-size:cover;
+  transition:1s;
+}
 
-    .bg {
-      position: fixed;
-      width: 100%;
-      height: 100%;
-      background-size: cover;
-      animation: slideShow 20s infinite;
-      z-index: -2;
-    }
+.container {
+  width:90%;
+  max-width:420px;
+  padding:20px;
+  border-radius:20px;
+  background:rgba(0,0,0,0.6);
+  color:white;
+  text-align:center;
+}
 
-    @keyframes slideShow {
-      0% {background-image: url('https://images.unsplash.com/photo-1579684385127-1ef15d508118');}
-      33% {background-image: url('https://images.unsplash.com/photo-1580281657527-47a1bba1c7c3');}
-      66% {background-image: url('https://images.unsplash.com/photo-1584515933487-779824d29309');}
-      100% {background-image: url('https://images.unsplash.com/photo-1588776814546-1ffcf47267a5');}
-    }
+textarea {
+  width:100%;
+  height:100px;
+  border-radius:10px;
+  padding:10px;
+}
 
-    .overlay {
-      position: fixed;
-      width: 100%;
-      height: 100%;
-      background: rgba(0,0,0,0.6);
-      z-index: -1;
-    }
+button {
+  width:100%;
+  padding:12px;
+  margin-top:10px;
+  border:none;
+  border-radius:10px;
+  color:white;
+}
 
-    .card {
-      background: rgba(255,255,255,0.15);
-      backdrop-filter: blur(15px);
-      padding: 30px;
-      border-radius: 20px;
-      width: 420px;
-      text-align: center;
-      color: white;
-    }
+.analyze {background:red;}
+.speak {background:green;}
+.map {background:blue;}
 
-    textarea {
-      width: 100%;
-      height: 100px;
-      border-radius: 12px;
-      border: none;
-      padding: 10px;
-    }
-
-    button {
-      margin-top: 10px;
-      padding: 12px;
-      width: 100%;
-      border: none;
-      border-radius: 12px;
-      background: #ff4b2b;
-      color: white;
-      font-size: 16px;
-      cursor: pointer;
-    }
-
-    .result {
-      margin-top: 20px;
-      padding: 15px;
-      border-radius: 12px;
-      display: none;
-      color: black;
-    }
-
-    .critical { background: #ffcccc; }
-    .moderate { background: #fff3cd; }
-    .safe { background: #d4edda; }
-
-    .call-btn { background: green; display: none; }
-  </style>
+#resultBox {
+  margin-top:15px;
+  padding:10px;
+  border-radius:10px;
+  white-space:pre-line;
+}
+</style>
 </head>
 
 <body>
 
-<div class="bg"></div>
-<div class="overlay"></div>
+<div class="container">
+<h2>🚑 Jeevan Rakshak AI</h2>
 
-<div class="card">
-  <h1>🚑 JeevanRakshak AI</h1>
+<select id="lang">
+<option value="en">English</option>
+<option value="hi">हिंदी</option>
+<option value="gu">ગુજરાતી</option>
+</select>
 
-  <textarea id="symptoms" placeholder="Describe symptoms..."></textarea>
+<p id="label">Enter symptoms:</p>
+<textarea id="symptoms"></textarea>
 
-  <button onclick="analyze()">🔍 Analyze</button>
-  <button onclick="startVoice('en-IN')">🎤 Speak (English)</button>
-  <button onclick="startVoice('hi-IN')">🎤 Speak (Hindi)</button>
+<button class="analyze" onclick="analyze()">Analyze</button>
+<button class="speak" onclick="speak()">Speak</button>
+<button class="map" onclick="map()">Nearby Hospital</button>
 
-  <div id="resultBox" class="result">
-    <h2 id="level"></h2>
-    <p id="advice"></p>
-  </div>
+<div id="resultBox"></div>
 
-  <button id="callBtn" class="call-btn" onclick="callAmbulance()">📞 Call 108</button>
-
-  <button onclick="findHospital()">🏥 Find Nearby Hospital</button>
 </div>
 
 <script>
-function startVoice(lang) {
-  const recognition = new webkitSpeechRecognition();
-  recognition.lang = lang;
-  recognition.start();
 
-  recognition.onresult = function(event) {
-    let speech = event.results[0][0].transcript;
-    document.getElementById("symptoms").value = speech;
-    analyze();
-  };
+/* BACKGROUND */
+let imgs=[
+"https://images.unsplash.com/photo-1507525428034-b723cf961d3e",
+"https://images.unsplash.com/photo-1501785888041-af3ef285b470"
+];
+let i=0;
+setInterval(()=>{
+document.body.style.backgroundImage="url("+imgs[i]+")";
+i=(i+1)%imgs.length;
+},5000);
+
+
+/* SIMPLE TRANSLATION (MANUAL) */
+function translate(text, lang){
+
+if(lang==="hi"){
+return text
+.replace("Possible Condition","संभावित स्थिति")
+.replace("Advice","सलाह")
+.replace("Medicines","दवाएं")
+.replace("Precautions","सावधानियां")
+.replace("Do not take any medicine without consulting a doctor","डॉक्टर से सलाह के बिना दवा न लें");
 }
 
-async function analyze() {
-  let symptoms = document.getElementById("symptoms").value;
-
-  let response = await fetch("http://127.0.0.1:8000/analyze", {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({ symptoms })
-  });
-
-  let data = await response.json();
-
-  let box = document.getElementById("resultBox");
-  box.style.display = "block";
-  box.className = "result";
-
-  document.getElementById("level").innerText = data.level;
-  document.getElementById("advice").innerText = data.advice;
-
-  if (data.level.includes("Critical")) {
-    box.classList.add("critical");
-    document.getElementById("callBtn").style.display = "block";
-  } else if (data.level.includes("Moderate")) {
-    box.classList.add("moderate");
-  } else {
-    box.classList.add("safe");
-  }
+if(lang==="gu"){
+return text
+.replace("Possible Condition","સંભવિત સ્થિતિ")
+.replace("Advice","સલાહ")
+.replace("Medicines","દવાઓ")
+.replace("Precautions","સાવચેતીઓ")
+.replace("Do not take any medicine without consulting a doctor","ડોક્ટરની સલાહ વગર દવા ન લો");
 }
 
-function callAmbulance() {
-  window.location.href = "tel:108";
+return text;
 }
 
-function findHospital() {
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(position => {
-      let lat = position.coords.latitude;
-      let lon = position.coords.longitude;
 
-      let url = `https://www.google.com/maps/search/hospitals/@${lat},${lon},15z`;
-      window.open(url, "_blank");
-    });
-  } else {
-    alert("Location not supported");
-  }
+/* ANALYZE */
+async function analyze(){
+
+let s=document.getElementById("symptoms").value;
+let lang=document.getElementById("lang").value;
+
+let res=await fetch("https://jeevanrakshakai.onrender.com/analyze",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({symptoms:s})
+});
+
+let data=await res.json();
+
+let translated=translate(data.advice,lang);
+
+document.getElementById("resultBox").innerHTML=
+"<b>"+data.level+"</b><br><br>"+translated;
 }
+
+
+/* SPEAK FIX */
+function speak(){
+
+let text=document.getElementById("resultBox").innerText;
+let lang=document.getElementById("lang").value;
+
+if(!text){
+alert("No result");
+return;
+}
+
+let speech=new SpeechSynthesisUtterance(text);
+
+if(lang==="hi") speech.lang="hi-IN";
+else if(lang==="gu") speech.lang="gu-IN";
+else speech.lang="en-IN";
+
+window.speechSynthesis.speak(speech);
+}
+
+
+/* MAP */
+function map(){
+window.open("https://www.google.com/maps/search/hospital+near+me");
+}
+
+
+/* LABEL CHANGE */
+document.getElementById("lang").onchange=function(){
+let l=this.value;
+let label=document.getElementById("label");
+
+if(l==="hi") label.innerText="अपने लक्षण लिखें:";
+else if(l==="gu") label.innerText="તમારા લક્ષણો લખો:";
+else label.innerText="Enter symptoms:";
+};
+
 </script>
 
 </body>
